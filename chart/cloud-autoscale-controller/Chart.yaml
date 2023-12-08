@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: v0.0.0
+description: Cloud autoscaler
+home: https://github.com/DoodleScheduling/cloud-autoscale-controller
+maintainers:
+- name: devops
+  email: devops@doodle.com
+keywords:
+- kubernetes-controller
+- aws
+- atlas
+- rds
+- mongodb
+- autoscale
+- scale-to-zeo
+name: cloud-autoscale-controller
+sources:
+- https://github.com/DoodleScheduling/cloud-autoscale-controller
+version: 0.0.0

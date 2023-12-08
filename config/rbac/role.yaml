@@ -1,0 +1,74 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - AWSRDSInstances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - AWSRDSInstances/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - AWSRDSInstances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - mongodbatlasclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - mongodbatlasclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloudautoscale.infra.doodle.com
+  resources:
+  - mongodbatlasclusters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
