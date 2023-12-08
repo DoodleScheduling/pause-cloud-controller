@@ -84,6 +84,29 @@ metadata:
 type: Opaque
 ```
 
+## Observe reconciliation
+
+Each resource reports various conditions in `.status.condtions` which will give the necessary insight about the 
+current state of the resource.
+Namely there are three conditions which are `Ready`, `Reconciling` and `PodsReady`.
+
+```yaml
+status:
+  conditions:
+  - lastTransitionTime: "2023-11-30T12:01:52Z"
+    message: random cloud error
+    observedGeneration: 32
+    reason: ReconciliationFailed
+    status: "False"
+    type: Ready
+  - lastTransitionTime: "2023-11-24T09:46:42Z"
+    message: ""
+    observedGeneration: 32
+    reason: Progressing
+    status: "True"
+    type: Reconciling
+```
+
 ## Installation
 
 ### Helm
