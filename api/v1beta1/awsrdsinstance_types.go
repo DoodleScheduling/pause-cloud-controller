@@ -15,10 +15,13 @@ type AWSRDSInstance struct {
 }
 
 type AWSRDSInstanceSpec struct {
-	Options      `json:",inline"`
-	Secret       LocalObjectReference `json:"localObkjectReference,omitempty"`
-	Region       string               `json:"region,omitempty"`
-	InstanceName string               `json:"instanceName,omitempty"`
+	Suspend      bool                   `json:"suspend,omitempty"`
+	ScaleToZero  []metav1.LabelSelector `json:"scaleToZero,omitempty"`
+	GracePeriod  metav1.Duration        `json:"gracePeriod,omitempty"`
+	Interval     metav1.Duration        `json:"interval,omitempty"`
+	Secret       LocalObjectReference   `json:"secret,omitempty"`
+	Region       string                 `json:"region,omitempty"`
+	InstanceName string                 `json:"instanceName,omitempty"`
 }
 
 // KeycloakClusterList contains a list of KeycloakCluster.
@@ -48,6 +51,11 @@ func AWSRDSInstanceReconciling(set AWSRDSInstance, status metav1.ConditionStatus
 
 func AWSRDSInstanceReady(set AWSRDSInstance, status metav1.ConditionStatus, reason, message string) AWSRDSInstance {
 	setResourceCondition(&set, ConditionReady, status, reason, message, set.ObjectMeta.Generation)
+	return set
+}
+
+func AWSRDSInstanceScaledToZero(set AWSRDSInstance, status metav1.ConditionStatus, reason, message string) AWSRDSInstance {
+	setResourceCondition(&set, ConditionScaledToZero, status, reason, message, set.ObjectMeta.Generation)
 	return set
 }
 

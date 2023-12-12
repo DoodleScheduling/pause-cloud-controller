@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - cloudautoscale.infra.doodle.com
   resources:
-  - AWSRDSInstances
+  - awsrdsinstances
   verbs:
   - create
   - delete
@@ -19,13 +19,13 @@ rules:
 - apiGroups:
   - cloudautoscale.infra.doodle.com
   resources:
-  - AWSRDSInstances/finalizers
+  - awsrdsinstances/finalizers
   verbs:
   - update
 - apiGroups:
   - cloudautoscale.infra.doodle.com
   resources:
-  - AWSRDSInstances/status
+  - awsrdsinstances/status
   verbs:
   - get
   - patch

@@ -15,10 +15,13 @@ type MongoDBAtlasCluster struct {
 }
 
 type MongoDBAtlasClusterSpec struct {
-	Options     `json:",inline"`
-	GroupID     string               `json:"groupID,omitempty"`
-	Secret      LocalObjectReference `json:"localObkjectReference,omitempty"`
-	ClusterName string               `json:"clusterName,omitempty"`
+	Suspend     bool                   `json:"suspend,omitempty"`
+	ScaleToZero []metav1.LabelSelector `json:"scaleToZero,omitempty"`
+	GracePeriod metav1.Duration        `json:"gracePeriod,omitempty"`
+	Interval    metav1.Duration        `json:"interval,omitempty"`
+	GroupID     string                 `json:"groupID,omitempty"`
+	Secret      LocalObjectReference   `json:"secret,omitempty"`
+	ClusterName string                 `json:"clusterName,omitempty"`
 }
 
 // KeycloakClusterList contains a list of KeycloakCluster.
@@ -48,6 +51,11 @@ func MongoDBAtlasClusterReconciling(set MongoDBAtlasCluster, status metav1.Condi
 
 func MongoDBAtlasClusterReady(set MongoDBAtlasCluster, status metav1.ConditionStatus, reason, message string) MongoDBAtlasCluster {
 	setResourceCondition(&set, ConditionReady, status, reason, message, set.ObjectMeta.Generation)
+	return set
+}
+
+func MongoDBAtlasClusterScaledToZero(set MongoDBAtlasCluster, status metav1.ConditionStatus, reason, message string) MongoDBAtlasCluster {
+	setResourceCondition(&set, ConditionScaledToZero, status, reason, message, set.ObjectMeta.Generation)
 	return set
 }
 

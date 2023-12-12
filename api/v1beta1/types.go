@@ -5,22 +5,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Options struct {
-	Suspend     bool                   `json:"suspend,omitempty"`
-	ScaleToZero []metav1.LabelSelector `json:"scaleToZero,omitempty"`
-	GracePeriod metav1.Duration        `json:"gracePeriod,omitempty"`
-	Interval    metav1.Duration        `json:"interval,omitempty"`
-}
-
 type LocalObjectReference struct {
 	Name string `json:"name,omitempty"`
 }
 
 const (
-	Finalizer            = "finalizers.doodle.com"
-	ConditionReady       = "Ready"
-	ConditionReconciling = "Reconciling"
-	ConditionPodsReady   = "PodsReady"
+	Finalizer             = "finalizers.doodle.com"
+	ConditionReady        = "Ready"
+	ConditionReconciling  = "Reconciling"
+	ConditionScaledToZero = "ScaledToZero"
 )
 
 // ConditionalResource is a resource with conditions

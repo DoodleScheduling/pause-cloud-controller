@@ -38,11 +38,6 @@ spec:
                 type: string
               interval:
                 type: string
-              localObkjectReference:
-                properties:
-                  name:
-                    type: string
-                type: object
               region:
                 type: string
               scaleToZero:
@@ -95,6 +90,11 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              secret:
+                properties:
+                  name:
+                    type: string
+                type: object
               suspend:
                 type: boolean
             type: object
