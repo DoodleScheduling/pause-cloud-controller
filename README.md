@@ -28,6 +28,7 @@ a grace period of 5 minutes.
 **Note**: If no grace period is set the instance will be terminated immediately after the condition ScaledToZero is set to `True`.
 
 ```yaml
+apiVersion: cloudautoscale.infra.doodle.com/v1beta1
 kind: AWSRDSInstance
 metadata:
   name: rds-myname
@@ -60,6 +61,7 @@ If no pods are running matching either `app: backend` or `app: another-mongodb-c
 a grace period of 5 minutes.
 
 ```yaml
+apiVersion: cloudautoscale.infra.doodle.com/v1beta1
 kind: MongoDBAtlasCluster
 metadata:
   name: atlas-myname
