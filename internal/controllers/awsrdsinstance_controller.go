@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -40,6 +41,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+const (
+	secretIndexKey = ".metadata.secret"
 )
 
 //+kubebuilder:rbac:groups=cloudautoscale.infra.doodle.com,resources=awsrdsinstances,verbs=get;list;watch;create;update;patch;delete
@@ -70,8 +75,34 @@ func (r *AWSRDSInstanceReconciler) SetupWithManager(mgr ctrl.Manager, opts AWSRD
 			&corev1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(r.requestsForChangeBySelector),
 		).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(r.requestsForSecretChange),
+		).
 		WithOptions(controller.Options{MaxConcurrentReconciles: opts.MaxConcurrentReconciles}).
 		Complete(r)
+}
+
+func (r *AWSRDSInstanceReconciler) requestsForSecretChange(ctx context.Context, o client.Object) []reconcile.Request {
+	sectet, ok := o.(*corev1.Secret)
+	if !ok {
+		panic(fmt.Sprintf("expected a Secret, got %T", o))
+	}
+
+	var list infrav1beta1.AWSRDSInstanceList
+	if err := r.List(ctx, &list, client.MatchingFields{
+		secretIndexKey: objectKey(sectet).String(),
+	}); err != nil {
+		return nil
+	}
+
+	var reqs []reconcile.Request
+	for _, instance := range list.Items {
+		r.Log.V(1).Info("referenced secret from a AWSRDSInstance changed detected", "namespace", instance.GetNamespace(), "name", instance.GetName())
+		reqs = append(reqs, reconcile.Request{NamespacedName: objectKey(&instance)})
+	}
+
+	return reqs
 }
 
 func (r *AWSRDSInstanceReconciler) requestsForChangeBySelector(ctx context.Context, o client.Object) []reconcile.Request {
@@ -209,14 +240,14 @@ func (r *AWSRDSInstanceReconciler) reconcile(ctx context.Context, instance infra
 		logger.Info("make sure RDS instances are suspended", "instance", opts.instanceName)
 		res, err = r.suspend(ctx, logger, opts)
 
-		if err != nil {
+		if err == nil {
 			instance = infrav1beta1.AWSRDSInstanceReady(instance, metav1.ConditionTrue, "ReconciliationSuccessful", "rds instance suspended")
 		}
 	} else {
 		logger.Info("make sure RDS instances are resumed", "instance", opts.instanceName)
 		res, err = r.resume(ctx, logger, opts)
 
-		if err != nil {
+		if err == nil {
 			instance = infrav1beta1.AWSRDSInstanceReady(instance, metav1.ConditionTrue, "ReconciliationSuccessful", "rds instance suspended")
 		}
 	}
