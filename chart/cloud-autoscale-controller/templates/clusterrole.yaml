@@ -14,8 +14,8 @@ rules:
 - apiGroups:
   - "cloudautoscale.infra.doodle.com"
   resources:
-  - awsrdsinstances/status
-  - mongodbatlasclusters/status
+  - awsrdsinstances
+  - mongodbatlasclusters
   verbs:
   - create
   - delete
