@@ -19,8 +19,11 @@ package controllers
 import (
 	"context"
 	"errors"
+	"net/http"
+	"time"
 
 	infrav1beta1 "github.com/doodlescheduling/cloud-autoscale-controller/api/v1beta1"
+	"github.com/fluxcd/pkg/runtime/conditions"
 	"github.com/go-logr/logr"
 	"github.com/mongodb-forks/digest"
 	"go.mongodb.org/atlas/mongodbatlas"
@@ -28,7 +31,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,9 +49,9 @@ import (
 // MongoDBAtlasClusterReconciler reconciles a Namespace object
 type MongoDBAtlasClusterReconciler struct {
 	client.Client
-	Log      logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	HTTPClient *http.Client
+	Log        logr.Logger
+	Recorder   record.EventRecorder
 }
 
 type MongoDBAtlasClusterReconcilerOptions struct {
@@ -113,7 +115,7 @@ func (r *MongoDBAtlasClusterReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	result, err := r.reconcile(ctx, cluster, logger)
+	cluster, result, err := r.reconcile(ctx, cluster, logger)
 	cluster.Status.ObservedGeneration = cluster.GetGeneration()
 
 	if err != nil {
@@ -137,24 +139,27 @@ func (r *MongoDBAtlasClusterReconciler) Reconcile(ctx context.Context, req ctrl.
 
 }
 
-func (r *MongoDBAtlasClusterReconciler) reconcile(ctx context.Context, cluster infrav1beta1.MongoDBAtlasCluster, logger logr.Logger) (ctrl.Result, error) {
+func (r *MongoDBAtlasClusterReconciler) reconcile(ctx context.Context, cluster infrav1beta1.MongoDBAtlasCluster, logger logr.Logger) (infrav1beta1.MongoDBAtlasCluster, ctrl.Result, error) {
 	var atlas corev1.Secret
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      cluster.Spec.Secret.Name,
-		Namespace: cluster.Name,
+		Namespace: cluster.Namespace,
 	}, &atlas); err != nil {
-		return reconcile.Result{}, err
+		return cluster, reconcile.Result{}, err
 	}
 
-	opts := atlasOptions{}
+	opts := atlasOptions{
+		MongoDBAtlasClusterSpec: cluster.Spec,
+	}
+
 	if val, ok := atlas.Data["publicKey"]; !ok {
-		return ctrl.Result{}, errors.New("publicKey not found in secret")
+		return cluster, ctrl.Result{}, errors.New("publicKey not found in secret")
 	} else {
 		opts.PublicKey = string(val)
 	}
 
 	if val, ok := atlas.Data["privateKey"]; !ok {
-		return ctrl.Result{}, errors.New("privateKey not found in secret")
+		return cluster, ctrl.Result{}, errors.New("privateKey not found in secret")
 	} else {
 		opts.PrivateKey = string(val)
 	}
@@ -166,28 +171,54 @@ func (r *MongoDBAtlasClusterReconciler) reconcile(ctx context.Context, cluster i
 	}
 
 	logger = logger.WithValues("cluster", opts.ClusterName)
-	suspend, err := r.hasRunningPods(ctx, cluster, logger)
+	podsRunning, err := r.hasRunningPods(ctx, cluster, logger)
+
 	if err != nil {
-		return ctrl.Result{}, err
+		return cluster, ctrl.Result{}, err
 	}
+
+	if podsRunning {
+		cluster = infrav1beta1.MongoDBAtlasClusterScaledToZero(cluster, metav1.ConditionFalse, "PodsRunning", "selector matches at least one running pod")
+	} else {
+		cluster = infrav1beta1.MongoDBAtlasClusterScaledToZero(cluster, metav1.ConditionTrue, "PodsNotRunning", "no running pods detected")
+	}
+
+	suspend := !podsRunning
 
 	var (
 		res ctrl.Result
 	)
 
+	scaledToZeroCondition := conditions.Get(&cluster, infrav1beta1.ConditionScaledToZero)
+
 	if suspend {
-		logger.Info("make sure atlas clusters are suspended", "cluster", opts.ClusterName)
+		if scaledToZeroCondition != nil && scaledToZeroCondition.Status == metav1.ConditionTrue {
+			if time.Since(scaledToZeroCondition.LastTransitionTime.Time) >= cluster.Spec.GracePeriod.Duration {
+				logger.Info("pod scaled to zero grace period reached", "grace-period", cluster.Spec.GracePeriod)
+			} else {
+				logger.V(1).Info("pod scaled to zero grace period in progress", "grace-period", cluster.Spec.GracePeriod)
+				return cluster, reconcile.Result{
+					RequeueAfter: cluster.Spec.GracePeriod.Duration,
+				}, nil
+			}
+		}
+
+		logger.Info("make sure RDS clusters are suspended", "cluster", opts.ClusterName)
 		res, err = r.suspend(ctx, logger, opts)
+
+		if err != nil {
+			cluster = infrav1beta1.MongoDBAtlasClusterReady(cluster, metav1.ConditionTrue, "ReconciliationSuccessful", "atlas cluster suspended")
+		}
 	} else {
-		logger.Info("make sure atlas clusters are resumed", "cluster", opts.ClusterName)
+		logger.Info("make sure RDS clusters are resumed", "cluster", opts.ClusterName)
 		res, err = r.resume(ctx, logger, opts)
+
+		if err != nil {
+			cluster = infrav1beta1.MongoDBAtlasClusterReady(cluster, metav1.ConditionTrue, "ReconciliationSuccessful", "atlas cluster resumed")
+		}
 	}
 
-	if err != nil {
-		return res, err
-	}
-
-	return res, err
+	return cluster, res, err
 }
 
 func (r *MongoDBAtlasClusterReconciler) hasRunningPods(ctx context.Context, cluster infrav1beta1.MongoDBAtlasCluster, logger logr.Logger) (bool, error) {
@@ -202,7 +233,7 @@ func (r *MongoDBAtlasClusterReconciler) hasRunningPods(ctx context.Context, clus
 		}
 
 		var list corev1.PodList
-		if err := r.Client.List(ctx, &list, client.InNamespace(cluster.Name), &client.MatchingLabelsSelector{Selector: selector}); err != nil {
+		if err := r.Client.List(ctx, &list, client.InNamespace(cluster.Namespace), &client.MatchingLabelsSelector{Selector: selector}); err != nil {
 			return false, err
 		}
 
@@ -224,20 +255,43 @@ type atlasOptions struct {
 	PrivateKey  string
 }
 
-func (r *MongoDBAtlasClusterReconciler) resume(ctx context.Context, logger logr.Logger, opts atlasOptions) (ctrl.Result, error) {
-	t := digest.NewTransport(opts.PublicKey, opts.PrivateKey)
-	tc, err := t.Client()
-	if err != nil {
-		return ctrl.Result{}, err
+func (r *MongoDBAtlasClusterReconciler) initClient(ctx context.Context, opts atlasOptions) (*mongodbatlas.Client, *mongodbatlas.Cluster, error) {
+	var (
+		tc *http.Client
+	)
+	if r.HTTPClient == nil {
+		t := digest.NewTransport(opts.PublicKey, opts.PrivateKey)
+		c, err := t.Client()
+
+		if err != nil {
+			return nil, nil, err
+		}
+
+		tc = c
+	} else {
+		tc = r.HTTPClient
 	}
 
 	atlas := mongodbatlas.NewClient(tc)
 	cluster, _, err := atlas.Clusters.Get(ctx, opts.GroupID, opts.ClusterName)
 	if err != nil {
+		return atlas, nil, err
+	}
+
+	if cluster == nil || cluster.Name == "" {
+		return atlas, cluster, errors.New("no such atlas cluster found")
+	}
+
+	return atlas, cluster, nil
+}
+
+func (r *MongoDBAtlasClusterReconciler) resume(ctx context.Context, logger logr.Logger, opts atlasOptions) (ctrl.Result, error) {
+	atlas, cluster, err := r.initClient(ctx, opts)
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if *cluster.Paused {
+	if cluster.Paused != nil && *cluster.Paused {
 		logger.Info("resume atlas cluster")
 		p := false
 		cluster := &mongodbatlas.Cluster{
@@ -255,20 +309,12 @@ func (r *MongoDBAtlasClusterReconciler) resume(ctx context.Context, logger logr.
 }
 
 func (r *MongoDBAtlasClusterReconciler) suspend(ctx context.Context, logger logr.Logger, opts atlasOptions) (ctrl.Result, error) {
-	t := digest.NewTransport(opts.PublicKey, opts.PrivateKey)
-	tc, err := t.Client()
+	atlas, cluster, err := r.initClient(ctx, opts)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	atlas := mongodbatlas.NewClient(tc)
-	cluster, _, err := atlas.Clusters.Get(ctx, opts.GroupID, opts.ClusterName)
-
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if !*cluster.Paused {
+	if cluster.Paused != nil && !*cluster.Paused {
 		logger.Info("suspend atlas cluster")
 		p := true
 		cluster := &mongodbatlas.Cluster{

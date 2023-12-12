@@ -40,11 +40,6 @@ spec:
                 type: string
               interval:
                 type: string
-              localObkjectReference:
-                properties:
-                  name:
-                    type: string
-                type: object
               scaleToZero:
                 items:
                   description: A label selector is a label query over a set of resources.
@@ -95,6 +90,11 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              secret:
+                properties:
+                  name:
+                    type: string
+                type: object
               suspend:
                 type: boolean
             type: object

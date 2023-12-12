@@ -17,14 +17,18 @@ package controllers
 
 import (
 	"context"
+	"io"
+	"net/http"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/DoodleScheduling/growthbook-controller/api/v1beta1"
+	"github.com/doodlescheduling/cloud-autoscale-controller/api/v1beta1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,11 +39,14 @@ import (
 )
 
 var (
-	cfg       *rest.Config
-	k8sClient client.Client // You'll be using this client in your tests.
-	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
+	cfg        *rest.Config
+	k8sClient  client.Client // You'll be using this client in your tests.
+	testEnv    *envtest.Environment
+	ctx        context.Context
+	cancel     context.CancelFunc
+	httpClient = &http.Client{
+		Transport: &mockTransport{},
+	}
 )
 
 func TestAPIs(t *testing.T) {
@@ -80,16 +87,18 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&MongoDBAtlasClusterReconciler{
-		Client:   k8sManager.GetClient(),
-		Scheme:   k8sManager.GetScheme(),
-		Recorder: k8sManager.GetEventRecorderFor("MongoDBAtlasCluster"),
+		HTTPClient: httpClient,
+		Client:     k8sManager.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("MongoDBAtlasCluster"),
+		Recorder:   k8sManager.GetEventRecorderFor("MongoDBAtlasCluster"),
 	}).SetupWithManager(k8sManager, MongoDBAtlasClusterReconcilerOptions{})
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&AWSRDSInstanceReconciler{
-		Client:   k8sManager.GetClient(),
-		Scheme:   k8sManager.GetScheme(),
-		Recorder: k8sManager.GetEventRecorderFor("AWSRDSInstance"),
+		HTTPClient: httpClient,
+		Log:        ctrl.Log.WithName("controllers").WithName("MongoDBAtlasCluster"),
+		Client:     k8sManager.GetClient(),
+		Recorder:   k8sManager.GetEventRecorderFor("AWSRDSInstance"),
 	}).SetupWithManager(k8sManager, AWSRDSInstanceReconcilerOptions{})
 	Expect(err).ToNot(HaveOccurred())
 
@@ -106,3 +115,40 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
+
+type mockTransport struct {
+}
+
+func (m *mockTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: 200,
+		Body:       io.NopCloser(strings.NewReader(``)),
+	}, nil
+}
+
+func needConditions(expected []metav1.Condition, current []metav1.Condition) bool {
+	for _, expectedCondition := range expected {
+		var hasCondition bool
+		for _, condition := range current {
+			if expectedCondition.Type == condition.Type {
+				hasCondition = true
+
+				if expectedCondition.Status != condition.Status {
+					return false
+				}
+				if expectedCondition.Reason != condition.Reason {
+					return false
+				}
+				if expectedCondition.Message != condition.Message {
+					return false
+				}
+			}
+		}
+
+		if !hasCondition {
+			return false
+		}
+	}
+
+	return true
+}

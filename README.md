@@ -25,6 +25,8 @@ rely on.
 If no pods are running matching either `app: backend` or `app: another-rds-client` the aws instance named `rds-myname` will be terminated after
 a grace period of 5 minutes.
 
+**Note**: If no grace period is set the instance will be terminated immediately after the condition ScaledToZero is set to `True`.
+
 ```yaml
 kind: AWSRDSInstance
 metadata:
@@ -88,7 +90,9 @@ type: Opaque
 
 Each resource reports various conditions in `.status.condtions` which will give the necessary insight about the 
 current state of the resource.
-Namely there are three conditions which are `Ready`, `Reconciling` and `PodsReady`.
+Namely there are the conditions `Ready` and `ScaledToZero`.
+ScaledToZero will give insigh whether the target rules have pods elected as up or down and Ready gives insight about
+the reconcililation status itself.
 
 ```yaml
 status:
@@ -99,12 +103,12 @@ status:
     reason: ReconciliationFailed
     status: "False"
     type: Ready
-  - lastTransitionTime: "2023-11-24T09:46:42Z"
-    message: ""
-    observedGeneration: 32
-    reason: Progressing
-    status: "True"
-    type: Reconciling
+  - lastTransitionTime: "2023-12-11T14:03:31Z"
+    message: selector matches at least one running pod
+    observedGeneration: 3
+    reason: PodsRunning
+    status: "False"
+    type: ScaledToZero
 ```
 
 ## Installation

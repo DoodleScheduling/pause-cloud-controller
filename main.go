@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -153,7 +154,6 @@ func main() {
 	mongodbAtlasClusterReconciler := &controllers.MongoDBAtlasClusterReconciler{
 		Client:   mgr.GetClient(),
 		Log:      ctrl.Log.WithName("controllers").WithName("MongoDBAtlasCluster"),
-		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("MongoDBAtlasCluster"),
 	}
 
@@ -165,10 +165,10 @@ func main() {
 	}
 
 	awsRDSInstanceReconciler := &controllers.AWSRDSInstanceReconciler{
-		Client:   mgr.GetClient(),
-		Log:      ctrl.Log.WithName("controllers").WithName("AWSRDSInstance"),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("AWSRDSInstance"),
+		Client:     mgr.GetClient(),
+		Log:        ctrl.Log.WithName("controllers").WithName("AWSRDSInstance"),
+		HTTPClient: http.DefaultClient,
+		Recorder:   mgr.GetEventRecorderFor("AWSRDSInstance"),
 	}
 
 	if err = awsRDSInstanceReconciler.SetupWithManager(mgr, controllers.AWSRDSInstanceReconcilerOptions{

@@ -75,7 +75,7 @@ build: generate fmt vet tidy ## Build manager binary.
 
 .PHONY: run
 run: manifests generate fmt vet tidy ## Run a controller from your host.
-	go run ./main.go
+	go run ./main.go --log-level=debug
 
 # Find or download gen-crd-api-reference-docs
 GEN_CRD_API_REFERENCE_DOCS = $(GOBIN)/gen-crd-api-reference-docs

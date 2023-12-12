@@ -3,7 +3,6 @@ module github.com/doodlescheduling/cloud-autoscale-controller
 go 1.20
 
 require (
-	github.com/DoodleScheduling/growthbook-controller v0.3.0
 	github.com/aws/aws-sdk-go-v2 v1.15.0
 	github.com/aws/aws-sdk-go-v2/service/rds v1.18.1
 	github.com/fluxcd/pkg/runtime v0.43.0
