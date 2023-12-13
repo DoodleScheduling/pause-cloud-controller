@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -66,8 +67,34 @@ func (r *MongoDBAtlasClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts 
 			&corev1.Pod{},
 			handler.EnqueueRequestsFromMapFunc(r.requestsForChangeBySelector),
 		).
+		Watches(
+			&corev1.Secret{},
+			handler.EnqueueRequestsFromMapFunc(r.requestsForSecretChange),
+		).
 		WithOptions(controller.Options{MaxConcurrentReconciles: opts.MaxConcurrentReconciles}).
 		Complete(r)
+}
+
+func (r *MongoDBAtlasClusterReconciler) requestsForSecretChange(ctx context.Context, o client.Object) []reconcile.Request {
+	sectet, ok := o.(*corev1.Secret)
+	if !ok {
+		panic(fmt.Sprintf("expected a Secret, got %T", o))
+	}
+
+	var list infrav1beta1.MongoDBAtlasClusterList
+	if err := r.List(ctx, &list, client.MatchingFields{
+		secretIndexKey: objectKey(sectet).String(),
+	}); err != nil {
+		return nil
+	}
+
+	var reqs []reconcile.Request
+	for _, cluster := range list.Items {
+		r.Log.V(1).Info("referenced secret from a MongoDBAtlasCluster changed detected", "namespace", cluster.GetNamespace(), "name", cluster.GetName())
+		reqs = append(reqs, reconcile.Request{NamespacedName: objectKey(&cluster)})
+	}
+
+	return reqs
 }
 
 func (r *MongoDBAtlasClusterReconciler) requestsForChangeBySelector(ctx context.Context, o client.Object) []reconcile.Request {
@@ -206,14 +233,14 @@ func (r *MongoDBAtlasClusterReconciler) reconcile(ctx context.Context, cluster i
 		logger.Info("make sure RDS clusters are suspended", "cluster", opts.ClusterName)
 		res, err = r.suspend(ctx, logger, opts)
 
-		if err != nil {
+		if err == nil {
 			cluster = infrav1beta1.MongoDBAtlasClusterReady(cluster, metav1.ConditionTrue, "ReconciliationSuccessful", "atlas cluster suspended")
 		}
 	} else {
 		logger.Info("make sure RDS clusters are resumed", "cluster", opts.ClusterName)
 		res, err = r.resume(ctx, logger, opts)
 
-		if err != nil {
+		if err == nil {
 			cluster = infrav1beta1.MongoDBAtlasClusterReady(cluster, metav1.ConditionTrue, "ReconciliationSuccessful", "atlas cluster resumed")
 		}
 	}
