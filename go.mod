@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/rds v1.18.1
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/go-logr/logr v1.3.0
-	github.com/mongodb-forks/digest v1.0.3
+	github.com/mongodb-forks/digest v1.0.5
 	github.com/onsi/ginkgo/v2 v2.13.2
 	github.com/onsi/gomega v1.30.0
 	github.com/spf13/pflag v1.0.5
