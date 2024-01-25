@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.24.1
-	github.com/aws/aws-sdk-go-v2/service/rds v1.66.2
+	github.com/aws/aws-sdk-go-v2/service/rds v1.67.0
 	github.com/fluxcd/pkg/runtime v0.43.3
 	github.com/go-logr/logr v1.4.1
 	github.com/mongodb-forks/digest v1.0.5
