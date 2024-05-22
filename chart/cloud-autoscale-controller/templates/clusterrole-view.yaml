@@ -15,9 +15,8 @@ rules:
 - apiGroups:
   - "cloudautoscale.infra.doodle.com"
   resources:
-  - cloudautoscalerealms
-  - cloudautoscaleclients
-  - cloudautoscaleusers
+  - awsrdsinstances
+  - mongodbatlasclusters
   verbs:
   - get
   - list
@@ -25,9 +24,8 @@ rules:
 - apiGroups:
   - "cloudautoscale.infra.doodle.com"
   resources:
-  - cloudautoscalerealms/status
-  - cloudautoscaleclients/status
-  - cloudautoscaleusers/status
+  - awsrdsinstances/status
+  - mongodbatlasclusters/status
   verbs:
   - get
 {{- end }}
