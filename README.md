@@ -3,6 +3,7 @@
 [![release](https://img.shields.io/github/release/DoodleScheduling/cloud-autoscale-controller/all.svg)](https://github.com/DoodleScheduling/cloud-autoscale-controller/releases)
 [![release](https://github.com/DoodleScheduling/cloud-autoscale-controller/actions/workflows/release.yaml/badge.svg)](https://github.com/DoodleScheduling/cloud-autoscale-controller/actions/workflows/release.yaml)
 [![report](https://goreportcard.com/badge/github.com/DoodleScheduling/cloud-autoscale-controller)](https://goreportcard.com/report/github.com/DoodleScheduling/cloud-autoscale-controller)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/DoodleScheduling/cloud-autoscale-controller/badge)](https://api.securityscorecards.dev/projects/github.com/DoodleScheduling/cloud-autoscale-controller)
 [![Coverage Status](https://coveralls.io/repos/github/DoodleScheduling/cloud-autoscale-controller/badge.svg?branch=master)](https://coveralls.io/github/DoodleScheduling/cloud-autoscale-controller?branch=master)
 [![license](https://img.shields.io/github/license/DoodleScheduling/cloud-autoscale-controller.svg)](https://github.com/DoodleScheduling/cloud-autoscale-controller/blob/master/LICENSE)
 

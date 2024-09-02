@@ -8,31 +8,6 @@ rules:
   - cloudautoscale.infra.doodle.com
   resources:
   - awsrdsinstances
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cloudautoscale.infra.doodle.com
-  resources:
-  - awsrdsinstances/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloudautoscale.infra.doodle.com
-  resources:
-  - awsrdsinstances/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - cloudautoscale.infra.doodle.com
-  resources:
   - mongodbatlasclusters
   verbs:
   - create
@@ -45,12 +20,14 @@ rules:
 - apiGroups:
   - cloudautoscale.infra.doodle.com
   resources:
+  - awsrdsinstances/finalizers
   - mongodbatlasclusters/finalizers
   verbs:
   - update
 - apiGroups:
   - cloudautoscale.infra.doodle.com
   resources:
+  - awsrdsinstances/status
   - mongodbatlasclusters/status
   verbs:
   - get
@@ -60,13 +37,6 @@ rules:
   - ""
   resources:
   - pods
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - secrets
   verbs:
   - get
