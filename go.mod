@@ -8,7 +8,7 @@ require (
 	github.com/fluxcd/pkg/runtime v0.49.0
 	github.com/go-logr/logr v1.4.2
 	github.com/mongodb-forks/digest v1.1.0
-	github.com/onsi/ginkgo/v2 v2.20.1
+	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/spf13/pflag v1.0.5
 	go.mongodb.org/atlas v0.37.0
