@@ -16,8 +16,8 @@ github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 h1:TToQNkv
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0/go.mod h1:0jp+ltwkf+SwG2fm/PKo8t4y8pJSgOCO4D8Lz3k0aHQ=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.4 h1:tHxQi/XHPK0ctd/wdOw0t7Xrc2OxcRCnVzv8lwWPu0c=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.4/go.mod h1:4GQbF1vJzG60poZqWatZlhP31y8PGCCVTvIGPdaaYJ0=
-github.com/aws/aws-sdk-go-v2/service/rds v1.89.1 h1:l38+eLYjQRF+srwXXyOM8hRuoI34C7Hk/r/DY6qLAuQ=
-github.com/aws/aws-sdk-go-v2/service/rds v1.89.1/go.mod h1:NVSftCz6GNgqRJrlZIlihCTih9PYcDfI1C34NImX59c=
+github.com/aws/aws-sdk-go-v2/service/rds v1.89.2 h1:6Z8uAqPcfS2FkXJCAbiRv1I6ZGV9qt4U7mlkzsLHDuA=
+github.com/aws/aws-sdk-go-v2/service/rds v1.89.2/go.mod h1:NVSftCz6GNgqRJrlZIlihCTih9PYcDfI1C34NImX59c=
 github.com/aws/smithy-go v1.22.0 h1:uunKnWlcoL3zO7q+gG2Pk53joueEOsnNB28QdMsmiMM=
 github.com/aws/smithy-go v1.22.0/go.mod h1:irrKGvNn1InZwb2d7fkIRNucdfwR8R+Ts3wxYa/cJHg=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
