@@ -10,7 +10,7 @@ require (
 	github.com/mongodb-forks/digest v1.1.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	go.mongodb.org/atlas v0.37.0
 	k8s.io/api v0.31.3
 	k8s.io/apimachinery v0.31.4
